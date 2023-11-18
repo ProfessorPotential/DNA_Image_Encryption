@@ -1,28 +1,40 @@
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 #include <iostream>
-#include <opencv2/opencv.hpp>
 
 using namespace std;
-using namespace cv;
 
 int main() {
     // Read an image from file
-    Mat inputImage = imread("path/to/your/image.jpg");
+    const char* imagePath = "path/to/your/image.jpg";
+    int width, height, channels;
+
+    unsigned char* image = stbi_load(imagePath, &width, &height, &channels, 0);
 
     // Check if the image was successfully loaded
-    if (inputImage.empty()) {
+    if (!image) {
         cout << "Error: Could not read the image." << endl;
         return -1;
     }
 
-    // Display the original image
-    imshow("Original Image", inputImage);
-    waitKey(0);
+    // Print image information
+    cout << "Width: " << width << ", Height: " << height << ", Channels: " << channels << endl;
 
-    // Convert the image to a matrix (if not already in matrix format)
-    Mat imageMatrix = inputImage;
+    // Access pixel values and perform operations
+    // For example, print the RGB values of the pixel at (x=10, y=10)
+    int x = 10;
+    int y = 10;
+    int index = (y * width + x) * channels;
+    cout << "Pixel at (" << x << ", " << y << "): ";
+    for (int c = 0; c < channels; ++c) {
+        cout << static_cast<int>(image[index + c]) << " ";
+    }
+    cout << endl;
 
-    // Now 'imageMatrix' is your image represented as a matrix
-    // You can access pixel values and perform operations on the matrix
+    // Perform your image processing or encryption code here...
+
+    // Free the allocated memory for the image
+    stbi_image_free(image);
 
     return 0;
 }

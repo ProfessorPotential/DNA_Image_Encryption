@@ -6,7 +6,7 @@ using namespace std;
 
 int main() {
     // Read an image from file
-    const char* imagePath = "path/to/your/image.jpg";
+    const char* imagePath = "test_image.jpeg";
     int width, height, channels;
 
     unsigned char* image = stbi_load(imagePath, &width, &height, &channels, 0);
@@ -22,8 +22,8 @@ int main() {
 
     // Access pixel values and perform operations
     // For example, print the RGB values of the pixel at (x=10, y=10)
-    int x = 10;
-    int y = 10;
+    int x = 25;
+    int y = 25;
     int index = (y * width + x) * channels;
     cout << "Pixel at (" << x << ", " << y << "): ";
     for (int c = 0; c < channels; ++c) {

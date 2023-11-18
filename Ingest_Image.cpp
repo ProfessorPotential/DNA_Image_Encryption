@@ -31,8 +31,6 @@ int main() {
     }
     cout << endl;
 
-    // Perform your image processing or encryption code here...
-
     // Free the allocated memory for the image
     stbi_image_free(image);
 

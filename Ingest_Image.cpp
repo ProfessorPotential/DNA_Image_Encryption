@@ -6,6 +6,7 @@
 
 using namespace std;
 
+
 /*
 This will only work with a static size image. The input function is agnostic to sizing, but does not resize
 */
@@ -16,7 +17,7 @@ string intToBinary(int value, int numBits) {
 }
 
 // Function to calculate the hamming distance. Takes in a matrixed bitplane (8 bits) and outputs a 168 bit hamming distance
-string HammingDistance(vector<vector<string> > bitplane) {
+bitset<168> HammingDistance(vector<vector<string> > bitplane) {
     //Collector for Hamming Distance
     int dist = 0;
 
@@ -29,12 +30,28 @@ string HammingDistance(vector<vector<string> > bitplane) {
             dist = dist + result;
         }
     }
-    return bitset<168>(dist).to_string();
+    return bitset<168>(dist);
+}
+
+template <size_t N>
+bool check_size(bitset<N>& bitsetNumber){
+    if (bitsetNumber.size() == 168){
+        return true;
+    }
+    else return false;
 }
 
 // Function to calculate the bitplane from a vector of intetgers
 
 int main() {
+    //Defining the user generated key
+    bitset<168> key("10101001100111111010101011011010011110111011001111111010101011011001110001101011011011001001001010111011100110000110110101010111111101010110100100110101111100011011011101000101011110");
+
+    //Check that Key is 168 Bits
+    if(!check_size(key)){
+        return -1;
+    }
+
     // Read an image from file
     const char* imagePath = "test_image.jpeg";
     int width, height, channels;
@@ -80,15 +97,27 @@ int main() {
 
         }
     }
-
+    /*
     // Print the size of each bitplane
     for (int i = 0; i < 8; ++i) {
         cout << "Size of Bitplane " << i << ": " << bitplanes[i].size() << endl;
     }
+    */
 
     // Calculate the Hamming Distance
-    string HD = HammingDistance(bitplanes);
-    cout << "168 Bit Hamming Distance:" << HD << endl;
+    bitset<168>(HD) = HammingDistance(bitplanes);
+    // Check HammingDistance is 168 bit
+    if(!check_size(HD)){
+        return -1;
+    }
+    // Calculating the key for chaotic cores
+    bitset<168>(skey) = HD^key;
+
+    cout << "168 Bit Hamming Distance:" << endl << HD << endl;
+    cout << "User Key: " << endl << key << endl;
+    cout << "Special Key:" << endl << skey << endl;
+
+
 
     // Free the allocated memory for the image
     stbi_image_free(image);

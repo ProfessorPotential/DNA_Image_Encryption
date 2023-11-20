@@ -32,6 +32,8 @@ string HammingDistance(vector<vector<string> > bitplane) {
     return bitset<168>(dist).to_string();
 }
 
+// Function to calculate the bitplane from a vector of intetgers
+
 int main() {
     // Read an image from file
     const char* imagePath = "test_image.jpeg";
@@ -47,9 +49,6 @@ int main() {
 
     // Print image information
     cout << "Width: " << width << ", Height: " << height << ", Channels: " << channels << endl;
-
-    cout << "1D Size: " << sizeof(image) << endl;
-
     
     // Access pixel values and perform operations
     // For example, print the RGB values of the pixel at (x,y)
@@ -68,24 +67,24 @@ int main() {
     //Converting the image to a 2D binary bit plane. 
     //Dimension 0 = Bit place (1 through 8)
     //Dimension 1 = 1D image pixel index 
-    vector<vector<string> > bitplanes(8, vector<string>(width * height));
+    vector<vector<string> > bitplanes(8, vector<string>(width * height * channels));
 
-    for (int i = 0; i < width * height; ++i) {
+    for (int i = 0; i < width * height * channels; ++i) {
+
         for (int j = 0; j < 8; ++j) {
-            // Extracting the jth (8-bit) from the image
+            // Extracting the jth from the image
             int bit = (image[i] >> j) & 1;
 
             // Store the bit in the corresponding bitplane
             bitplanes[j][i] = to_string(bit);
+
         }
     }
 
-    /*
     // Print the size of each bitplane
     for (int i = 0; i < 8; ++i) {
         cout << "Size of Bitplane " << i << ": " << bitplanes[i].size() << endl;
     }
-    */
 
     // Calculate the Hamming Distance
     string HD = HammingDistance(bitplanes);

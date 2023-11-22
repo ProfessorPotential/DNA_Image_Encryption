@@ -39,7 +39,15 @@ bitset<168> HammingDistance(vector<vector<string> > bitplane) {
             dist = dist + result;
         }
     }
-    return bitset<168>(dist);
+    bitset<42>(short_key) = bitset<42>(dist);
+    bitset<168>(long_key);
+
+    //Concatenate 4-times
+    for (int i = 0; i < 4; ++i) {
+        long_key <<= 42;  // Left shift by 42 bits
+        long_key |= bitset<168>(short_key.to_string()); //OR operator
+    }
+    return bitset<168>(long_key);
 }
 
 // Function to check the size of a bitset to verify it is 168 bits for the key
@@ -51,7 +59,89 @@ bool check_size_168(bitset<N>& bitsetNumber){
     else return false;
 }
 
-// Function to compute chaotic parameters
+// Function to DNA Encode an image
+vector<vector<string> > DNA_Encode_Bitplane(vector<vector<string> > img, int r){
+    //A = 00 | G = 01 | C = 10 | T = 11
+    vector<vector<string> > eimage = img;
+    for (int i = 0; i < img[0].size(); ++i) {
+        for (int j = 0; j < img.size(); j+=2) {    
+            switch (r) {
+                case 1:
+                    eimage[j][i] = img[j][i];
+                    eimage[j+1][i] = img[j+1][i];
+                    break;
+                case 2:
+                    if(eimage[j][i] == "0" & eimage[j+1][i] == "0"){
+                        eimage[j][i] = "0";
+                        eimage[j+1][i] = "0";
+                    }
+                    if(eimage[j][i] == "0" & eimage[j+1][i] == "1"){
+                        eimage[j][i] = "1";
+                        eimage[j+1][i] = "0";
+                    }
+                    if(eimage[j][i] == "1" & eimage[j+1][i] == "0"){
+                        eimage[j][i] = "0";
+                        eimage[j+1][i] = "1";
+                    } 
+                    if(eimage[j][i] == "1" & eimage[j+1][i] == "1"){
+                        eimage[j][i] = "1";
+                        eimage[j+1][i] = "1";
+                    }
+                    break;
+                case 3:
+                    if(eimage[j][i] == "0" & eimage[j+1][i] == "0"){
+                        eimage[j][i] = "0";
+                        eimage[j+1][i] = "1";
+                    }
+                    if(eimage[j][i] == "0" & eimage[j+1][i] == "1"){
+                        eimage[j][i] = "0";
+                        eimage[j+1][i] = "0";
+                    }
+                    if(eimage[j][i] == "1" & eimage[j+1][i] == "0"){
+                        eimage[j][i] = "1";
+                        eimage[j+1][i] = "1";
+                    } 
+                    if(eimage[j][i] == "1" & eimage[j+1][i] == "1"){
+                        eimage[j][i] = "1";
+                        eimage[j+1][i] = "0";
+                    }
+                    break;
+                case 4:
+                    break;
+                case 5:
+                    break;
+                case 6:
+                    break;
+                case 7:
+                    break;
+                case 8:
+                    break;
+                default:
+                    break;
+            } 
+        }
+    }   
+    return eimage;
+}
+
+unsigned char* encoded_image(vector<vector<string> > img){
+    //Initializing Variables
+    vector<unsigned char> result(img[0].size(),0);
+
+    //Building 8-Bit values
+    for (int i = 0; i < img[0].size(); ++i) {
+        std::bitset<8> bits; 
+        for (int j = 0; j < img.size(); ++j){
+            bits[j] = stoi(img[j][i]);
+        }
+    result[i] = static_cast<unsigned char>(bits.to_ulong()); //converting to integer
+    }
+
+    //Translating vector into unsigned char
+    unsigned char* mydata = result.data();
+    return mydata;
+}
+
 
 // Function to calculate the bitplane from a vector of intetgers
 
@@ -98,13 +188,11 @@ int main() {
     //Dimension 1 = 1D image pixel index 
     vector<vector<string> > bitplanes(8, vector<string>(width * height * channels));
     for (int i = 0; i < width * height * channels; ++i) {
-
         for (int j = 0; j < 8; ++j) {
             // Extracting the jth from the image
             int bit = (image[i] >> j) & 1;
             // Store the bit in the corresponding bitplane
             bitplanes[j][i] = to_string(bit);
-
         }
     }
     /*
@@ -120,15 +208,22 @@ int main() {
     if(!check_size_168(HD)){
         return -1;
     }
+
+    //DNA Encode the Original Matrix
+    vector<vector<string> > encoded_bp = DNA_Encode_Bitplane(bitplanes,4);
+
+    //Translating the encoded bit-plane back to unsigned char form
+    unsigned char* e_img = encoded_image(encoded_bp);
+
     // Calculating the key for chaotic cores using XOR
     bitset<168>(skey) = HD^key;
 
-    cout << "168 Bit Hamming Distance:" << endl << HD << endl;
-    cout << "User Key: " << endl << key << endl;
-    cout << "Special Key:" << endl << skey << endl;
+    //cout << "168 Bit Hamming Distance:" << endl << HD << endl;
+    //cout << "User Key: " << endl << key << endl;
+    //cout << "Special Key:" << endl << skey << endl;
 
     // Write Image for Debugging
-    stbi_write_jpg("output.jpg", width, height, channels, image, 100);
+    stbi_write_jpg("output.jpg", width, height, channels, e_img, 100);
 
     // Free the allocated memory for the image
     stbi_image_free(image);

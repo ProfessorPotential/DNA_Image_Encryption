@@ -2,6 +2,7 @@
 #include "stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+#include "ap_int.h"
 #include <iostream>
 #include <bitset>
 #include <vector>
@@ -18,6 +19,8 @@ bitset<40> y_0("0000000000010001000000000000000000000000"); //0011000000 hexadec
 bitset<40> p_1("0000000001000000000000000000000000000000"); //0040000000 hexadecimal
 bitset<40> p_2("0000000001011001100110011001100110011001"); //0059999999 hexadecimal
 
+ap_uint<168> var;
+
 /*-------------------------------FUNCTIONS------------------------------*/
 
 // Function to convert an integer to binary representation
@@ -26,28 +29,23 @@ string intToBinary(int value, int numBits) {
 }
 
 // Function to calculate the hamming distance. Takes in a matrixed bitplane (8 bits) and outputs a 168 bit hamming distance
-bitset<168> HammingDistance(vector<vector<string> > bitplane) {
+uint64_t HammingDistance(vector<uint8_t> bitplane) {
     //Collector for Hamming Distance
-    int dist = 0;
+    uint64_t dist = 0;
 
     //Length of the Bitplanes
-    int length = bitplane[0].size();
+    int length = bitplane.size();
+    uint64_t result;
 
     for (int i = 0; i < length; i++){
         for (int j = 0; j < 4; j++){
-            int result = int(bitplane[j][i]==bitplane[j+4][i]);
+            int result = ((bitplane[i] >> j) & 1) & ((bitplane[i] >> (j+4)) & 1);
             dist = dist + result;
         }
     }
-    bitset<42>(short_key) = bitset<42>(dist);
-    bitset<168>(long_key);
 
     //Concatenate 4-times
-    for (int i = 0; i < 4; ++i) {
-        long_key <<= 42;  // Left shift by 42 bits
-        long_key |= bitset<168>(short_key.to_string()); //OR operator
-    }
-    return bitset<168>(long_key);
+    return dist;
 }
 
 // Function to check the size of a bitset to verify it is 168 bits for the key
@@ -60,50 +58,58 @@ bool check_size_168(bitset<N>& bitsetNumber){
 }
 
 // Function to DNA Encode an image
-vector<vector<string> > DNA_Encode_Bitplane(vector<vector<string> > img, int r){
+vector<uint8_t> DNA_Encode_Bitplane(vector<uint8_t> img, int r){
     //A = 00 | G = 01 | C = 10 | T = 11
-    vector<vector<string> > eimage = img;
-    for (int i = 0; i < img[0].size(); ++i) {
-        for (int j = 0; j < img.size(); j+=2) {    
+    vector<uint8_t> eimage = img;
+    for (int i = 0; i < img.size(); ++i) {
+        for (int j = 0; j < 8; j+=2) {    
             switch (r) {
                 case 1:
-                    eimage[j][i] = img[j][i];
-                    eimage[j+1][i] = img[j+1][i];
+                    eimage[i] = img[i];
+                    eimage[i+1] = img[i+1];
                     break;
                 case 2:
-                    if(eimage[j][i] == "0" & eimage[j+1][i] == "0"){
-                        eimage[j][i] = "0";
-                        eimage[j+1][i] = "0";
+                    //Modifying bits for A ('00') Case
+                    if((img[i] >> j) == 0 & (img[i] >> (j+1)) == 0){
+                        eimage[i] &= ~(1 << j); //setting to 0
+                        eimage[i] &= ~(1 << (j+1)); //setting to 0
                     }
-                    if(eimage[j][i] == "0" & eimage[j+1][i] == "1"){
-                        eimage[j][i] = "1";
-                        eimage[j+1][i] = "0";
+                    //Modifying bits for G ('01') Case
+                    if((img[i] >> j) == 0 & (img[i] >> (j+1)) == 1){
+                        eimage[i] |= (1 << j); //setting to 1
+                        eimage[i] &= ~(1 << (j+1)); //setting to 0
                     }
-                    if(eimage[j][i] == "1" & eimage[j+1][i] == "0"){
-                        eimage[j][i] = "0";
-                        eimage[j+1][i] = "1";
+                    //Modifying bits for G ('10') Case
+                    if((img[i] >> j) == 1 & (img[i] >> (j+1)) == 0){
+                        eimage[i] &= ~(1 << j); //setting to 0
+                        eimage[i] |= (1 << (j+1)); //setting to 1
                     } 
-                    if(eimage[j][i] == "1" & eimage[j+1][i] == "1"){
-                        eimage[j][i] = "1";
-                        eimage[j+1][i] = "1";
+                    //Modifying bits for T ('11') Case
+                    if((img[i] >> j) == 1 & (img[i] >> (j+1)) == 1){
+                        eimage[i] |= (1 << j); //setting to 1
+                        eimage[i] |= (1 << (j+1)); //setting to 1
                     }
                     break;
                 case 3:
-                    if(eimage[j][i] == "0" & eimage[j+1][i] == "0"){
-                        eimage[j][i] = "0";
-                        eimage[j+1][i] = "1";
+                    //Modifying bits for A ('00') Case
+                    if((img[i] >> j) == 0 & (img[i] >> (j+1)) == 0){
+                        eimage[i] &= ~(1 << j); //setting to 0
+                        eimage[i] |= (1 << (j+1)); //setting to 1
                     }
-                    if(eimage[j][i] == "0" & eimage[j+1][i] == "1"){
-                        eimage[j][i] = "0";
-                        eimage[j+1][i] = "0";
+                    //Modifying bits for G ('01') Case
+                    if((img[i] >> j) == 0 & (img[i] >> (j+1)) == 1){
+                        eimage[i] &= ~(1 << j); //setting to 0
+                        eimage[i] &= ~(1 << (j+1)); //setting to 0
                     }
-                    if(eimage[j][i] == "1" & eimage[j+1][i] == "0"){
-                        eimage[j][i] = "1";
-                        eimage[j+1][i] = "1";
+                    //Modifying bits for G ('10') Case
+                    if((img[i] >> j) == 1 & (img[i] >> (j+1)) == 0){
+                        eimage[i] |= (1 << j); //setting to 1
+                        eimage[i] |= (1 << (j+1)); //setting to 1
                     } 
-                    if(eimage[j][i] == "1" & eimage[j+1][i] == "1"){
-                        eimage[j][i] = "1";
-                        eimage[j+1][i] = "0";
+                    //Modifying bits for T ('11') Case
+                    if((img[i] >> j) == 1 & (img[i] >> (j+1)) == 1){
+                        eimage[i] |= (1 << j); //setting to 1
+                        eimage[i] &= ~(1 << (j+1)); //setting to 0
                     }
                     break;
                 case 4:
@@ -124,24 +130,19 @@ vector<vector<string> > DNA_Encode_Bitplane(vector<vector<string> > img, int r){
     return eimage;
 }
 
-unsigned char* encoded_image(vector<vector<string> > img){
+unsigned char* encoded_image(vector<uint8_t> img){
     //Initializing Variables
-    vector<unsigned char> result(img[0].size(),0);
+    vector<unsigned char> result(img.size(),0);
 
-    //Building 8-Bit values
-    for (int i = 0; i < img[0].size(); ++i) {
-        std::bitset<8> bits; 
-        for (int j = 0; j < img.size(); ++j){
-            bits[j] = stoi(img[j][i]);
-        }
-    result[i] = static_cast<unsigned char>(bits.to_ulong()); //converting to integer
+    //Translating 8-bit values to unsigned char
+    for (int i = 0; i < img.size(); ++i) {
+        result[i] = static_cast<unsigned char>(img[i]); //converting to integer
     }
 
-    //Translating vector into unsigned char
+    //Translating vector into unsigned char*
     unsigned char* mydata = result.data();
     return mydata;
 }
-
 
 // Function to calculate the bitplane from a vector of intetgers
 
@@ -168,59 +169,67 @@ int main() {
 
     // Print image information
     cout << "Width: " << width << ", Height: " << height << ", Channels: " << channels << endl;
-    
+    int size = width*height*channels;
+
+    //Modify the unsigned char variables into 8-bit (uint_8) variables
+    vector<uint8_t> bplane(size);
+    for (int i = 0; i < width * height * channels; ++i) {
+        bplane[i] = image[i];
+    }
+
     // Access pixel values and perform operations
     // For example, print the RGB values of the pixel at (x,y)
     int x = 25;
     int y = 25;
 
+    // Set the 3rd bit (make it 1)
+    //myVariable |= (1 << 2);
+
+    // Clear the 3rd bit (make it 0)
+    // myVariable &= ~(1 << 2);
+
     int index = (y * width + x) * channels;
     cout << "Pixel at (" << x << ", " << y << "): " << endl;
     for (int c = 0; c < channels; ++c) {
         cout << "Integer: " << static_cast<int>(image[index + c]) << " ";
-        cout << "Binary: " << intToBinary(static_cast<int>(image[index + c]),8) << " ";
-        cout << endl;
+        cout << "Binary: " << intToBinary(static_cast<int>(bplane[index + c]),8) << " ";
+        cout << "Bit 0 is: " << ((bplane[index + c] >> 1) & 1) << endl;;
     }
     cout << endl;
-    
-    //Converting the image to a 2D binary bit plane. 
-    //Dimension 0 = Bit place (1 through 8)
-    //Dimension 1 = 1D image pixel index 
-    vector<vector<string> > bitplanes(8, vector<string>(width * height * channels));
-    for (int i = 0; i < width * height * channels; ++i) {
-        for (int j = 0; j < 8; ++j) {
-            // Extracting the jth from the image
-            int bit = (image[i] >> j) & 1;
-            // Store the bit in the corresponding bitplane
-            bitplanes[j][i] = to_string(bit);
-        }
-    }
+
     /*
     // Print the size of each bitplane
     for (int i = 0; i < 8; ++i) {
         cout << "Size of Bitplane " << i << ": " << bitplanes[i].size() << endl;
     }
     */
-
+    
     // Calculate the Hamming Distance
-    bitset<168>(HD) = HammingDistance(bitplanes);
+    uint64_t(HD) = HammingDistance(bplane);
+    cout << "HammingDistance is: " << HD << " or " << intToBinary(static_cast<int>(HD),32);
+
+    /*
     // Check HammingDistance is 168 bit
     if(!check_size_168(HD)){
         return -1;
     }
+    */
 
     //DNA Encode the Original Matrix
-    vector<vector<string> > encoded_bp = DNA_Encode_Bitplane(bitplanes,4);
+    vector<uint8_t> encoded_bp = DNA_Encode_Bitplane(bplane,2);
 
+    
     //Translating the encoded bit-plane back to unsigned char form
     unsigned char* e_img = encoded_image(encoded_bp);
 
+    /*
     // Calculating the key for chaotic cores using XOR
     bitset<168>(skey) = HD^key;
 
     //cout << "168 Bit Hamming Distance:" << endl << HD << endl;
     //cout << "User Key: " << endl << key << endl;
     //cout << "Special Key:" << endl << skey << endl;
+    */
 
     // Write Image for Debugging
     stbi_write_jpg("output.jpg", width, height, channels, e_img, 100);

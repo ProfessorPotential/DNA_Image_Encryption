@@ -8,12 +8,9 @@
 #include <vector>
 using namespace std;
 
-// Function to DNA Encode an image
-unsigned char* DNA_Encryption(unsigned char* img, int size, int r){
+// Function to DNA Encode an image. Takes in img as the "base" image and modifies eimage as the returned image
+void DNA_Encryption(unsigned char* img, unsigned char* eimage, int size, int r){
     //A = 00 | C = 01 | G = 10 | T = 11
-    unsigned char* eimage = new unsigned char[size];
-    memset(eimage, 0, size); //initialize with 0s
-
     for (int i = 0; i < size; ++i) {
         for (int j = 6; j >= 0; j-=2) {    
             switch (r) {
@@ -181,8 +178,8 @@ unsigned char* DNA_Encryption(unsigned char* img, int size, int r){
                     break;
             } 
         }
-    }   
-    return eimage;
+    }  
+    return; 
 }
 
 int main(){
@@ -195,7 +192,7 @@ int main(){
     unsigned char* r_image = new unsigned char[size];
     memset(r_image, 0, size); //initialize with 0s
 
-    r_image = DNA_Encryption(image, size, 2);
+    DNA_Encryption(image, r_image, size, 2);
     stbi_write_jpg("output.jpg", width, height, channels, r_image, 100);
 
     return 0;

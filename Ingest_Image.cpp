@@ -2,240 +2,123 @@
 #include "stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
-#include "ap_int.h"
-#include <iostream>
-#include <bitset>
-#include <vector>
+
+#include "xcoupled_skew_tent.h"
+#include "DNA.h"
 
 using namespace std;
+/*
+ * References:
+ * [1] R. Elmanfaloty, A. Alnajim, and E. Abou-Bakr, “A finite precision
+ *     implementation of an image encryption scheme based on dna encoding
+ *     and binarized chaotic cores.” IEEE Access, Access, IEEE, vol. 9, pp.
+ *     136 905 – 136 916, 2021.
+ * [2] R. A. Elmanfaloty and E. Abou-Bakr, “Random property enhancement of
+ *     a 1D chaotic PRNG with finite precision implementation,” Chaos Solitons
+ *     Fractals, vol. 118, pp. 134–144, 2019.
+ */
 
-/*--------------------------------GLOBAL VARIABLES-----------------------*/
-//User Generated 168 Bit Key
-bitset<168> key("10101001100111111010101011011010011110111011001111111010101011011001110001101011011011001001001010111011100110000110110101010111111101010110100100110101111100011011011101000101011110");
+#define SECRET_KEY_LEN 24 // 26 * 8 = 192
+#define GEN_KEY_LEN 4
+#define SECRET_KEY_GROUP_LEN (SECRET_KEY_LEN / GEN_KEY_LEN)
+#define KEY_CHAR_SIZE 8
 
-//Chaotic Parameters (using float since C++ treats these as 32-bit numbers instead of 64-bit like double data type)
-bitset<40> x_0("0000000000000000101100000000000000000000"); //0000b00000 hexadecimal
-bitset<40> y_0("0000000000010001000000000000000000000000"); //0011000000 hexadecimal
-bitset<40> p_1("0000000001000000000000000000000000000000"); //0040000000 hexadecimal
-bitset<40> p_2("0000000001011001100110011001100110011001"); //0059999999 hexadecimal
+uint64_t HammingDistance2(uint8_t* image, uint32_t height, uint32_t width){
+    uint8_t xor_bits;
+    uint64_t h_dist = 0ULL;
 
-ap_uint<168> var;
-
-/*-------------------------------FUNCTIONS------------------------------*/
-
-// Function to convert an integer to binary representation
-string intToBinary(int value, int numBits) {
-    return bitset<32>(value).to_string().substr(32 - numBits);
-}
-
-// Function to calculate the hamming distance. Takes in a matrixed bitplane (8 bits) and outputs a 168 bit hamming distance
-uint64_t HammingDistance(vector<uint8_t> bitplane) {
-    //Collector for Hamming Distance
-    uint64_t dist = 0;
-
-    //Length of the Bitplanes
-    int length = bitplane.size();
-    uint64_t result;
-
-    for (int i = 0; i < length; i++){
-        for (int j = 0; j < 4; j++){
-            int result = ((bitplane[i] >> j) & 1) & ((bitplane[i] >> (j+4)) & 1);
-            dist = dist + result;
+    for(uint32_t y=0; y<height; y++){
+        for(uint32_t x=0, dx=1; x < width && dx < width; x +=2, dx += 2){
+            xor_bits = image[x  + (y * width)] ^ image[dx + (y * width)];
+            while(xor_bits){
+                h_dist += xor_bits % 2;
+                xor_bits >>= 1; 
+            }
         }
     }
-
-    //Concatenate 4-times
-    return dist;
+    return h_dist;
 }
-
-// Function to check the size of a bitset to verify it is 168 bits for the key
-template <size_t N>
-bool check_size_168(bitset<N>& bitsetNumber){
-    if (bitsetNumber.size() == 168){
-        return true;
-    }
-    else return false;
-}
-
-// Function to DNA Encode an image
-vector<uint8_t> DNA_Encode_Bitplane(vector<uint8_t> img, int r){
-    //A = 00 | G = 01 | C = 10 | T = 11
-    vector<uint8_t> eimage = img;
-    for (int i = 0; i < img.size(); ++i) {
-        for (int j = 0; j < 8; j+=2) {    
-            switch (r) {
-                case 1:
-                    eimage[i] = img[i];
-                    eimage[i+1] = img[i+1];
-                    break;
-                case 2:
-                    //Modifying bits for A ('00') Case
-                    if((img[i] >> j) == 0 & (img[i] >> (j+1)) == 0){
-                        eimage[i] &= ~(1 << j); //setting to 0
-                        eimage[i] &= ~(1 << (j+1)); //setting to 0
-                    }
-                    //Modifying bits for G ('01') Case
-                    if((img[i] >> j) == 0 & (img[i] >> (j+1)) == 1){
-                        eimage[i] |= (1 << j); //setting to 1
-                        eimage[i] &= ~(1 << (j+1)); //setting to 0
-                    }
-                    //Modifying bits for G ('10') Case
-                    if((img[i] >> j) == 1 & (img[i] >> (j+1)) == 0){
-                        eimage[i] &= ~(1 << j); //setting to 0
-                        eimage[i] |= (1 << (j+1)); //setting to 1
-                    } 
-                    //Modifying bits for T ('11') Case
-                    if((img[i] >> j) == 1 & (img[i] >> (j+1)) == 1){
-                        eimage[i] |= (1 << j); //setting to 1
-                        eimage[i] |= (1 << (j+1)); //setting to 1
-                    }
-                    break;
-                case 3:
-                    //Modifying bits for A ('00') Case
-                    if((img[i] >> j) == 0 & (img[i] >> (j+1)) == 0){
-                        eimage[i] &= ~(1 << j); //setting to 0
-                        eimage[i] |= (1 << (j+1)); //setting to 1
-                    }
-                    //Modifying bits for G ('01') Case
-                    if((img[i] >> j) == 0 & (img[i] >> (j+1)) == 1){
-                        eimage[i] &= ~(1 << j); //setting to 0
-                        eimage[i] &= ~(1 << (j+1)); //setting to 0
-                    }
-                    //Modifying bits for G ('10') Case
-                    if((img[i] >> j) == 1 & (img[i] >> (j+1)) == 0){
-                        eimage[i] |= (1 << j); //setting to 1
-                        eimage[i] |= (1 << (j+1)); //setting to 1
-                    } 
-                    //Modifying bits for T ('11') Case
-                    if((img[i] >> j) == 1 & (img[i] >> (j+1)) == 1){
-                        eimage[i] |= (1 << j); //setting to 1
-                        eimage[i] &= ~(1 << (j+1)); //setting to 0
-                    }
-                    break;
-                case 4:
-                    break;
-                case 5:
-                    break;
-                case 6:
-                    break;
-                case 7:
-                    break;
-                case 8:
-                    break;
-                default:
-                    break;
-            } 
-        }
-    }   
-    return eimage;
-}
-
-unsigned char* encoded_image(vector<uint8_t> img){
-    //Initializing Variables
-    vector<unsigned char> result(img.size(),0);
-
-    //Translating 8-bit values to unsigned char
-    for (int i = 0; i < img.size(); ++i) {
-        result[i] = static_cast<unsigned char>(img[i]); //converting to integer
-    }
-
-    //Translating vector into unsigned char*
-    unsigned char* mydata = result.data();
-    return mydata;
-}
-
-// Function to calculate the bitplane from a vector of intetgers
 
 int main() {
-    /*----------------------------------------------------VARIABLES-----------------------------------*/
-    //Defining the user generated key
-
-    //Check that Key is 168 Bits
-    if(!check_size_168(key)){
-        return -1;
-    }
-
     // Read an image from file
-    const char* imagePath = "test_image.jpeg";
+    const char* imagePath = "./input_image/test_image.jpeg";
     int width, height, channels;
 
-    unsigned char* image = stbi_load(imagePath, &width, &height, &channels, 0);
+    unsigned char* image = stbi_load(imagePath, &width, &height, &channels, 1);
+    unsigned char output_image[width*height];
 
-    // Check if the image was successfully loaded
-    if (!image) {
-        cout << "Error: Could not read the image." << endl;
-        return -1;
-    }
-
-    // Print image information
-    cout << "Width: " << width << ", Height: " << height << ", Channels: " << channels << endl;
-    int size = width*height*channels;
-
-    //Modify the unsigned char variables into 8-bit (uint_8) variables
-    vector<uint8_t> bplane(size);
-    for (int i = 0; i < width * height * channels; ++i) {
-        bplane[i] = image[i];
-    }
-
-    // Access pixel values and perform operations
-    // For example, print the RGB values of the pixel at (x,y)
-    int x = 25;
-    int y = 25;
-
-    // Set the 3rd bit (make it 1)
-    //myVariable |= (1 << 2);
-
-    // Clear the 3rd bit (make it 0)
-    // myVariable &= ~(1 << 2);
-
-    int index = (y * width + x) * channels;
-    cout << "Pixel at (" << x << ", " << y << "): " << endl;
-    for (int c = 0; c < channels; ++c) {
-        cout << "Integer: " << static_cast<int>(image[index + c]) << " ";
-        cout << "Binary: " << intToBinary(static_cast<int>(bplane[index + c]),8) << " ";
-        cout << "Bit 0 is: " << ((bplane[index + c] >> 1) & 1) << endl;;
-    }
-    cout << endl;
-
-    /*
-    // Print the size of each bitplane
-    for (int i = 0; i < 8; ++i) {
-        cout << "Size of Bitplane " << i << ": " << bitplanes[i].size() << endl;
-    }
-    */
+    /* Pseudo random sequence generation */
+    cout <<" *** Generating random sequences *** " << endl;
+    uint64_t dist = HammingDistance2((uint8_t*) image, height, width);
     
-    // Calculate the Hamming Distance
-    uint64_t(HD) = HammingDistance(bplane);
-    cout << "HammingDistance is: " << HD << " or " << intToBinary(static_cast<int>(HD),32);
-
-    /*
-    // Check HammingDistance is 168 bit
-    if(!check_size_168(HD)){
-        return -1;
-    }
-    */
-
-    //DNA Encode the Original Matrix
-    vector<uint8_t> encoded_bp = DNA_Encode_Bitplane(bplane,2);
-
+    uint8_t secret_key1[SECRET_KEY_LEN+1] = "tH15_iS_S3cReT_k3Y_nO.1*";
+    uint8_t secret_key2[SECRET_KEY_LEN+1] = "This-1Z-sECr3t-KEV-N0_2!";
     
-    //Translating the encoded bit-plane back to unsigned char form
-    unsigned char* e_img = encoded_image(encoded_bp);
+    uint64_t K1[GEN_KEY_LEN], K2[GEN_KEY_LEN]; // K[4] = {x, y, p1, p2};
+    for(int i=0; i<GEN_KEY_LEN; i++){
+        K1[i] = dist;
+        K2[i] = dist;
+        uint64_t sk1=0;
+        uint64_t sk2=0;
+        for(int j=0; j<SECRET_KEY_GROUP_LEN; j++){
+            sk1 |= (uint64_t) secret_key1[i * SECRET_KEY_GROUP_LEN + j] << (KEY_CHAR_SIZE * j);
+            sk2 |= (uint64_t) secret_key2[i * SECRET_KEY_GROUP_LEN + j] << (KEY_CHAR_SIZE * j);
+        }
+        K1[i] ^= sk1;
+        K2[i] ^= sk2;
+    }
+    uint32_t permute[width * height];
+    uint8_t random_sequence[width * height], random_sequence_enc[width * height], image_enc[width*height], encrypted_img[width*height];// output_img[width*height];
 
-    /*
-    // Calculating the key for chaotic cores using XOR
-    bitset<168>(skey) = HD^key;
+    generate_sequence_xcoupled_skew_tent(K1[0], K1[1], K1[2], K1[3], width*height, random_sequence);
+    generate_permutation_xcoupled_skew_tent(K2[0], K2[1], K2[2], K2[3], width*height, permute);
+    
+    int img_dim = width*height;
+    /* Testing Permutation (test only not part of the algorithm)*/
+    cout <<" *** Testing random sequence generation by performing pixel scrambling *** " << endl;
+    for(int i=0; i<img_dim; i++){
+        unsigned char tmp = image[i];
+        image[i] = image[permute[i]];
+        image[permute[i]] = tmp;
+    }
+    stbi_write_jpg("./output_image/permuted.jpg", width, height, 1, image, 100);
 
-    //cout << "168 Bit Hamming Distance:" << endl << HD << endl;
-    //cout << "User Key: " << endl << key << endl;
-    //cout << "Special Key:" << endl << skey << endl;
-    */
+    for(int i=img_dim - 1; i>=0; i--){
+        unsigned char tmp = image[i];
+        image[i] = image[permute[i]];
+        image[permute[i]] = tmp;
+    }
+    stbi_write_jpg("./output_image/unpermuted.jpg", width, height, 1, image, 100);
 
-    // Write Image for Debugging
-    stbi_write_jpg("output.jpg", width, height, channels, e_img, 100);
 
-    // Free the allocated memory for the image
-    stbi_image_free(image);
+    /* Encryption */
+    cout <<" *** Encrypting image *** " << endl;
+    DNA_encode(random_sequence, random_sequence_enc, img_dim, 5);
+    DNA_encode(image, image_enc, img_dim, 5);
+    DNA_add(image_enc, random_sequence_enc, encrypted_img, img_dim);
 
+    for(int i=0; i<width * height; i++){
+        unsigned char tmp = encrypted_img[i];
+        encrypted_img[i] = encrypted_img[permute[i]];
+        encrypted_img[permute[i]] = tmp;
+    }
+
+    stbi_write_jpg("./output_image/encrypted_img.jpg", width, height, 1, encrypted_img, 100);
+    
+    /* Decryption */
+    cout <<" *** Decrypting image *** " << endl;
+    uint8_t decrpyted_img_enc[img_dim], decrpyted_img_dec[img_dim], decrpyted_img[img_dim];
+    for(int i=0; i<height*width; i++){
+        decrpyted_img_enc[i] = encrypted_img[i];
+    }
+    for(int i=img_dim - 1; i>=0 ;i--){
+        unsigned char tmp = decrpyted_img_enc[i];
+        decrpyted_img_enc[i] = decrpyted_img_enc[permute[i]];
+        decrpyted_img_enc[permute[i]] = tmp;
+    }
+
+    DNA_subtract(decrpyted_img_enc, random_sequence_enc, decrpyted_img_dec, img_dim);
+    DNA_encode(decrpyted_img_dec, decrpyted_img, img_dim, 5);
+    stbi_write_jpg("./output_image/decrypted_img.jpg", width, height, 1, decrpyted_img, 100);
     return 0;
 }

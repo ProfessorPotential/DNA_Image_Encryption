@@ -1,10 +1,10 @@
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "./src/stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
+#include "./src/stb_image_write.h"
 
-#include "xcoupled_skew_tent.h"
-#include "DNA.h"
+#include "./src/xcoupled_skew_tent.h"
+#include "./src/DNA.h"
 
 using namespace std;
 /*
@@ -93,8 +93,8 @@ int main() {
 
     /* Encryption */
     cout <<" *** Encrypting image *** " << endl;
-    DNA_encode(random_sequence, random_sequence_enc, img_dim, 5);
-    DNA_encode(image, image_enc, img_dim, 5);
+    DNA_Encryption(random_sequence, random_sequence_enc, img_dim, 5);
+    DNA_Encryption(image, image_enc, img_dim, 5);
     DNA_add(image_enc, random_sequence_enc, encrypted_img, img_dim);
 
     for(int i=0; i<width * height; i++){
@@ -118,7 +118,7 @@ int main() {
     }
 
     DNA_subtract(decrpyted_img_enc, random_sequence_enc, decrpyted_img_dec, img_dim);
-    DNA_encode(decrpyted_img_dec, decrpyted_img, img_dim, 5);
+    DNA_Encryption(decrpyted_img_dec, decrpyted_img, img_dim, 5);
     stbi_write_jpg("./output_image/decrypted_img.jpg", width, height, 1, decrpyted_img, 100);
     return 0;
 }

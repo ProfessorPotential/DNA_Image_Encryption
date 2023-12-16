@@ -30,18 +30,26 @@ using namespace std;
 #define NUM_DATA_BIT 56
 #define NUM_FRAC_BIT 48
 #define MASK_DATA 0xFFFFFFFFFFFFFF
+#define MASK_FRAC 0xFFFFFFFFFFFF
 #define NUM_KEY_BIT 8
 #define XOR_GROUP_SIZE NUM_FRAC_BIT / NUM_KEY_BIT
 
+#define ONE_PT_ZERO (1ULL << NUM_FRAC_BIT)
+
 /* Main function */
-void generate_keys_xcoupled_skew_tent(uint64_t x0, uint64_t y0, uint64_t p1, uint64_t p2, uint32_t num_keys, uint8_t* keys);
+void generate_sequence_xcoupled_skew_tent(uint64_t x0, uint64_t y0, uint64_t p1, uint64_t p2, uint32_t num_seq, uint8_t* sequence);
+void generate_permutation_xcoupled_skew_tent(uint64_t x0, uint64_t y0, uint64_t p1, uint64_t p2, uint32_t num_seq, uint32_t* permutation_map);
+
+
 
 /* All other functions defined */
+void pre_calculate_multipliers(uint64_t p, uint64_t* a1, uint64_t* a2); 
 uint64_t skew_tent(uint64_t xn, uint64_t p, uint64_t a1, uint64_t a2);
 uint8_t cross_couple(uint64_t xn, uint64_t yn);
 uint8_t shift_xor(uint64_t x);
 uint64_t subtract_fixed_pt(uint64_t a, uint64_t b);
 uint64_t multiply_fixed_pt(uint64_t a, uint64_t b);
+uint64_t divide_fixed_pt(uint64_t a, uint64_t b);
 long double conv_double(uint64_t val); // Helper function to print the value in long double
 
 #endif

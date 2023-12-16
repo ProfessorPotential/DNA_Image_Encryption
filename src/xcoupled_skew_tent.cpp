@@ -49,6 +49,12 @@ void generate_sequence_xcoupled_skew_tent(uint64_t x0, uint64_t y0, uint64_t p1,
     pre_calculate_multipliers(p1, &a1, &a2);
     pre_calculate_multipliers(p2, &b1, &b2);
     
+
+    printf(BYTE_TO_BINARY_PATTERN "\n", BYTE_TO_BINARY(a1));
+    printf(BYTE_TO_BINARY_PATTERN "\n", BYTE_TO_BINARY(a2));
+    printf(BYTE_TO_BINARY_PATTERN "\n", BYTE_TO_BINARY(b1));
+    printf(BYTE_TO_BINARY_PATTERN "\n", BYTE_TO_BINARY(b2));
+    
     //PRSG (pseudo-random sequence generation) process  
     uint8_t rand_num;
     uint64_t xprev = x0;
@@ -69,11 +75,6 @@ void generate_permutation_xcoupled_skew_tent(uint64_t x0, uint64_t y0, uint64_t 
     pre_calculate_multipliers(p1, &a1, &a2);
     pre_calculate_multipliers(p2, &b1, &b2);
     
-    // a1 = divide_fixed_pt(1ULL, p1);
-    // a2 = divide_fixed_pt(1ULL, subtract_fixed_pt(ONE_PT_ZERO, p1));
-    // b1 = divide_fixed_pt(1ULL, p2);
-    // b2 = divide_fixed_pt(1ULL, subtract_fixed_pt(ONE_PT_ZERO, p2));
-
     //PRNG (pseudo-random number generation) process  
     uint64_t xprev = x0;
     uint64_t yprev = y0;
@@ -82,7 +83,7 @@ void generate_permutation_xcoupled_skew_tent(uint64_t x0, uint64_t y0, uint64_t 
         yn = skew_tent(xprev, p1, a1, a2);
         xprev = xn;
         yprev = yn; 
-        permutation_map[i] = xprev % (num_seq - 1); // 0 to num_seq - 1
+        permutation_map[i] = xprev % (num_seq); // 0 to num_seq - 1
     }
 }
 

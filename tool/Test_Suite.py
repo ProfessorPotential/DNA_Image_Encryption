@@ -29,16 +29,21 @@ def unpack_sequence(sequence_binary_encoded: numpy.ndarray) -> numpy.ndarray:
     return numpy.packbits(numpy.array(sequence_binary_encoded)).astype(numpy.uint8)
 
 
+
+
 if __name__ == "__main__":
+    IMG_PATH = "" # Insert image file path
+    BIN_FILE_PATH = "" # Insert binary file path
+    
     #------------Importing Images----------------------------#
-    img = cv2.imread('lax_decrypted.jpg', cv2.IMREAD_GRAYSCALE) 
-    img2 = cv2.imread('lax_encrypted.jpg', cv2.IMREAD_GRAYSCALE)
+    img = cv2.imread(IMG_PATH, cv2.IMREAD_GRAYSCALE) 
+    img2 = cv2.imread(IMG_PATH, cv2.IMREAD_GRAYSCALE)
 
     #------------Importing Random Sequences------------------#
     # Import data into a numpy
-    random_data = numpy.fromfile('random_sequence.bin', dtype=numpy.uint8)
+    random_data = numpy.fromfile(BIN_FILE_PATH, dtype=numpy.uint8)
     random_data_bin = pack_sequence(random_data)
-    permute_data = numpy.fromfile('permute_sequence.bin', dtype=numpy.uint8)
+    permute_data = numpy.fromfile(BIN_FILE_PATH, dtype=numpy.uint8)
     permute_data_bin = pack_sequence(permute_data)
     
     #-----------Plotting Random Sequence--------------------#

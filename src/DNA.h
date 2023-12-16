@@ -63,7 +63,7 @@ const uint8_t DNA_LUT[NUM_RULES][NUM_NUCLEOTIDES] = {
     {A_7, G_7, C_7, T_7}
 };
 
-void DNA_encode(unsigned char* data, unsigned char* output_data, int size, int rule);
+void DNA_code(unsigned char* data, unsigned char* output_data, int size, int rule);
 void DNA_add(unsigned char* data1, unsigned char* data2, unsigned char* output_data, int size);
 void DNA_subtract(unsigned char* data1, unsigned char* data2, unsigned char* output_data, int size);
 uint8_t DNA_add_nucleotides(uint8_t a, uint8_t b);
